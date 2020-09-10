@@ -1,6 +1,8 @@
 import curses
 import re
 from pytube import YouTube
+import time
+import progressbar
 
 
 class cursesWindow:
@@ -23,18 +25,42 @@ class cursesWindow:
             else: # otherwise print menu as normal
                 stdsrc.addstr(y, x, row) 
 
+    # download functions
+    def download(self, streamType, stdsrc, streamInfo):
+        widgets = ['Loading: ', progressbar.AnimatedMarker()]
+        bar = progressbar.ProgressBar(widgets=widgets).start()
+        # clear screen
+        stdsrc.clear()
 
-    def download(self, streamType):
-        if streamType == "audio/video":
-            try:
-                self.yt.streams.filter(progressive=True).get_highest_resolution().download()
-            except:
-                print("Unable to download audio/video for {}. Something went wrong.".format(self.yt.title))
-        elif streamType == "audio_only":
-            try:
-                self.yt.streams.get_audio_only().download("./" + self.yt.title + "_audio_only.mp4")
-            except:
-                print("Unable to download audio_only for {}. Something went wrong".format(self.yt.title))
+        # get x and y of the current terminal
+        h, w = stdsrc.getmaxyx()
+
+        # info about video being downloaded
+        
+
+        # printing content in the center
+        for index, row in enumerate(streamInfo):
+            x = w//2 - len(row)//2
+            y = h//2 - len(streamInfo)//2 + index
+
+            stdsrc.addstr(y, x, row)
+        
+        # refresh screen
+        stdsrc.refresh()
+
+        # download with progress
+        for i in bar(range(100)):
+            if streamType == "audio/video":
+                try:
+                    self.yt.streams.filter(progressive=True).get_highest_resolution().download("./video/" + self.yt.title)
+                except:
+                    print("Unable to download audio/video for {}. Something went wrong.".format(self.yt.title))
+            elif streamType == "audio_only":
+                try:
+                    self.yt.streams.get_audio_only().download("./audio_only/" + self.yt.title)
+                except:
+                    print("Unable to download audio_only for {}. Something went wrong".format(self.yt.title))
+            time.sleep(0.02)
 
         
     def downloadPage(self, stdsrc):
@@ -42,51 +68,12 @@ class cursesWindow:
         stdsrc.clear()
 
         if self.current_row_index == 0:
-            # clear screen
-            stdsrc.clear()
-
-            # get x and y of the current terminal
-            h, w = stdsrc.getmaxyx()
-
-            # info about video being downloaded
-            streamInfo = ["You are downloading the video for", self.yt.title]
-
-            # printing content in the center
-            for index, row in enumerate(streamInfo):
-                x = w//2 - len(row)//2
-                y = h//2 - len(streamInfo)//2 + index
-
-                stdsrc.addstr(y, x, row)
-            
-            # getchar so it doesnt just go away
-            stdsrc.getch()
-
             # downloading
-            self.download("audio/video")
+            self.download("audio/video", stdsrc, streamInfo = ["You are downloading the video with audio for", self.yt.title, " "])
         elif self.current_row_index == 1:
-            # clear screen
-            stdsrc.clear()
-
-            # get x and y of current terminal
-            h, w = stdsrc.getmaxyx()
-
-            # info about current stream being downloaded
-            streamInfo = ["You are downloading the audio for", self.yt.title]
-
-            # printing content in center of terminal
-            for index, row in enumerate(streamInfo):
-                x = w//2 - len(row)//2
-                y = h//2 - len(streamInfo)//2 + index
-
-                stdsrc.addstr(y, x, row)
-            
-            stdsrc.getch()
-
             # downloading content
-            self.download("audio_only")
+            self.download("audio_only", stdsrc, streamInfo = ["You are downloading the audio_only for", self.yt.title, " "])
 
-
-            stdsrc.refresh() # refresh screen
     def main(self, stdsrc):
         # turning blinking cursor off
         curses.curs_set(0)
@@ -138,7 +125,7 @@ class cursesWindow:
             else:
                 print("{} is not a YouTube link, not going to work.".format(self.ytLink))
 
-
+    # init method
     def __init__(self):
         self.menuOptions = ["Audio and Video", "Audio_only", "Exit"]
         self.current_row_index = 0
