@@ -6,3 +6,6 @@ Random project, not sure why I made this
 
 
 ![](images/mainMenu.PNG)
+![](images/videoExample.PNG)
+![](images/audio_onlyEample.PNG)
+
